@@ -9,6 +9,7 @@ Publish
 *.suo
 *.cscfg
 *.Cache
+*.vscode
 project.lock.json
 
 /packages
