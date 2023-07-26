@@ -1,13 +1,38 @@
+const { TableClient, AzureNamedKeyCredential } = require('@azure/data-tables')
+const crypto = require('crypto')
+
+const credential = new AzureNamedKeyCredential(process.env.STORAGE_ACCOUNT_NAME, process.env.STORAGE_ACCOUNT_KEY)
+
 module.exports = async function (context, req) {
-    context.log('JavaScript HTTP trigger function processed a request.');
+    context.log('Web hook received');
+  
+    const hmac = crypto.createHmac('sha256', process.env.WEBHOOK_SIGNING_SECRET)
+        .update(JSON.stringify(req.body))
+        .digest('hex')
+    
+    if (!req.headers['pay-signature'] || hmac !== req.headers['pay-signature']) {
+        context.log.info('Request not from GOV Pay')
 
-    const name = (req.query.name || (req.body && req.body.name));
-    const responseMessage = name
-        ? "Hello, " + name + ". This HTTP triggered function executed successfully."
-        : "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.";
+        context.res = {
+            status: 403
+        }
 
-    context.res = {
-        // status: 200, /* Defaults to 200 */
-        body: responseMessage
-    };
+        return;
+    }
+
+    context.log.info('Request verified from GOV Pay')
+    
+    const tableClient = new TableClient(process.env.TABLE_STORAGE_URL, process.env.EVENT_TABLE_NAME, credential)
+    
+    const event = {
+        partitionKey: req.body.resource.reference,
+        rowKey: req.body.webhook_message_id,
+        timestamp: req.body.created_date,
+        event_type: req.body.event_type,
+        payment_status: req.body.resource?.state?.status,
+        payment_finished: req.body.resource?.state?.finished,
+        event: JSON.stringify(req.body)
+    }
+
+    await tableClient.createEntity(event)
 }
