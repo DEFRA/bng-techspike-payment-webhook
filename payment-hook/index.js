@@ -1,16 +1,12 @@
 const { TableClient, AzureNamedKeyCredential } = require('@azure/data-tables')
-const crypto = require('crypto')
+const { verifyGovPay } = require('./lib/verify-pay-signature')
 
 const credential = new AzureNamedKeyCredential(process.env.STORAGE_ACCOUNT_NAME, process.env.STORAGE_ACCOUNT_KEY)
 
 module.exports = async function (context, req) {
     context.log('Web hook received');
-  
-    const hmac = crypto.createHmac('sha256', process.env.WEBHOOK_SIGNING_SECRET)
-        .update(JSON.stringify(req.body))
-        .digest('hex')
-    
-    if (!req.headers['pay-signature'] || hmac !== req.headers['pay-signature']) {
+     
+    if (!verifyGovPay(req.body, req.headers, process.env.WEBHOOK_SIGNING_SECRET)) {
         context.log.info('Request not from GOV Pay')
 
         context.res = {
