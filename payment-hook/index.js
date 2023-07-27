@@ -1,7 +1,5 @@
-const { TableClient, AzureNamedKeyCredential } = require('@azure/data-tables')
-const { verifyGovPay } = require('./lib/verify-pay-signature')
-
-const credential = new AzureNamedKeyCredential(process.env.STORAGE_ACCOUNT_NAME, process.env.STORAGE_ACCOUNT_KEY)
+const { verifyGovPay } = require('../lib/verify-pay-signature')
+const { createEvent } = require('../lib/pay-events')
 
 module.exports = async function (context, req) {
     context.log('Web hook received');
@@ -17,9 +15,7 @@ module.exports = async function (context, req) {
     }
 
     context.log.info('Request verified from GOV Pay')
-    
-    const tableClient = new TableClient(process.env.TABLE_STORAGE_URL, process.env.EVENT_TABLE_NAME, credential)
-    
+        
     const event = {
         partitionKey: req.body.resource.reference,
         rowKey: req.body.webhook_message_id,
@@ -30,5 +26,5 @@ module.exports = async function (context, req) {
         event: JSON.stringify(req.body)
     }
 
-    await tableClient.createEntity(event)
+    await createEvent(event)
 }
