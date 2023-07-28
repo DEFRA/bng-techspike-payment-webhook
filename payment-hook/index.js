@@ -2,7 +2,7 @@ const { verifyGovPay } = require('../lib/verify-pay-signature')
 const { createEvent } = require('../lib/pay-events')
 
 module.exports = async function (context, req) {
-    context.log('Web hook received');
+    context.log('Web hook received')
      
     if (!verifyGovPay(req.body, req.headers, process.env.WEBHOOK_SIGNING_SECRET)) {
         context.log.info('Request not from GOV Pay')
