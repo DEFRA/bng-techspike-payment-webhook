@@ -17,3 +17,5 @@ The following environment variables need to be set in `local.settings.json`:
 | EVENT_TABLE_NAME     	| Name of table to add pay events to 	| Yes      	|                                          	|
 
 A new GOV.UK Pay webhook will need to be created using the external URL for the `payment-hook` function.
+
+As the webhook URL will need to be publicly available, it is advisable that the Azure Function is deployed to Azure rather than running locally.
